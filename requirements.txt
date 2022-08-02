@@ -1,0 +1,9 @@
+pip
+tensorflow
+ray[rllib] 
+#gym[atari] 
+#gym[accept-rom-license]
+gym==0.20.0 
+#atari_py
+matpotlib
+stable-baselines3==1.4.0
