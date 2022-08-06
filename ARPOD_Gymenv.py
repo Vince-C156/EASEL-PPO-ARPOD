@@ -4,7 +4,7 @@ import matlab.engine
 import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
-
+from collections import defaultdict
 
 
 	
@@ -21,10 +21,7 @@ class HCW_ARPOD(gym.Env):
         self.observation = np.asarray(self.x, dtype=np.float64)[0]
         self.time_elapsed = 0
         self.u = np.asarray([0.0, 0.0, 0.0], dtype=np.float64)
-        #self.action = self.u
 
-        self.lastcost = self.compute_cost(self.x, self.u)
-        self.cost = None
         self.action_space = spaces.Box(low=-6.0, high=6.0, shape=(3,), dtype=np.float64)
 	# Example for using image as input (channel-first; channel-last also works):
         self.observation_space = spaces.Box(low=-10000.0, high=10000.0, shape=(6,), dtype=np.float64)
@@ -32,28 +29,59 @@ class HCW_ARPOD(gym.Env):
         self.prev_distance = self.distance_toTarget(self.observation)
         self.inital_distance = self.distance_toTarget(self.observation)
 
+        self.inital_obstacle = ([500.0, 500.0, -500.0, -2, -3, -1], [200, 500, 300])
+        self.obstacle_dict = {'obstacle_1' : self.inital_obstacle}
+
+        self.info = defaultdict(list)
 
     def step(self, action):
         self.time_elapsed += 1
-        info = {}
+
         print("x0 IS ", self.x)
         #evolve system by t+1
         self.x = self.eng.ARPOD_Benchmark.nextStep(self.x, matlab.double(action), matlab.double(1), matlab.single(1),
                                                    nargout=1)[0]
         print("xdot IS ", self.x)
-
         self.observation = np.asarray(self.x, dtype=np.float64)[0]
+        #evolve obstacles
+
+        for obstacle_id, obstacle_data in self.obstacle_dict.items():
+
+            state = obstacle_data[0]
+            axes = obstacle_data[1]
+
+
+            state_matlab = matlab.double(state)[0]
+            
+            evolved_state = self.eng.ARPOD_Benchmark.nextStep(state_matlab, matlab.double([0.0, 0.0, 0.0]), matlab.double(1), matlab.single(1), 
+                                                              nargout=1)[0]
+
+            evolved_state = np.asarray(evolved_state, dtype=np.float64)[0]
+            self.obstacle_dict[obstacle_id] = (evolved_state, axes)
+
+
+            chaserPos = self.observation[:3]
+            obstaclePos = evolved_state[:3]
+            obstacle_info = (obstaclePos, axes)
+
+            self.info[obstacle_id].append(obstacle_info)
+
+            if self.in_obstacle(chaserPos, obstacle_info):
+                reward = -500
+                self.done = True
+                return self.observation, reward, self.done, self.info
+
         #check for out of bounds
 
         if not self.is_inbounds(self.observation):
             reward = -500
             self.done = True
-            return self.observation, reward, self.done, info
+            return self.observation, reward, self.done, self.info
 
-        if self.time_elapsed >= 10000:
-            reward = -200
+        if self.time_elapsed >= 1000:
+            reward = -300
             self.done = True
-            return self.observation, reward, self.done, info
+            return self.observation, reward, self.done, self.info
 
         #calculate reward
 
@@ -67,12 +95,12 @@ class HCW_ARPOD(gym.Env):
             reward = self.prev_distance - distance
         
         if reward <= 0:
-            reward = 0
+            reward = -1
 
         self.prev_distance = distance
 
         print("REWARD ", reward)
-        return self.observation, reward, self.done, info
+        return self.observation, reward, self.done, self.info
 
     def distance_toTarget(self, obs):
 
@@ -103,58 +131,49 @@ class HCW_ARPOD(gym.Env):
             return True    
 
 
-    def printstr(self, x):
-        print(x)
+    def in_obstacle(self, chaserPos, obstacle_data : tuple):
 
-    def check_docked(self, x):
-        x = np.asarray(x)[0]    
-        position, velocities = x[:3], x[3:]
-        posmag, velmag = np.linalg.norm(position), np.linalg.norm(velocities)
-        
-        if (posmag == 0) and (velmag == 0):
+        """
+        obstacle_data = (obstaclePos, [a, b, c])
+
+        x is the chaser position and xc is the ellipsoid center position
+
+        x = (x - xc)
+
+        xT * P_inv * x >= 1 is true when point is outside of area and false
+        if point is within area
+
+        """
+
+        obstaclePos = obstacle_data[0]
+        obstacleAxes = np.asarray(obstacle_data[1], dtype=np.float64)
+
+        obstacleAxes_squared = np.dot(obstacleAxes, obstacleAxes.T)
+
+        x = chaserPos[0] - obstaclePos[0]
+        y = chaserPos[1] - obstaclePos[1]
+        z = chaserPos[2] - obstaclePos[2]
+
+        X = np.asarray([[x],[y],[z]])
+        XT = X.T
+
+
+        P = np.zeros([3,3], dtype=np.float64)
+        np.fill_diagonal(P, obstacleAxes_squared)
+
+        print("P IS")
+        print(P)
+        P_inv = np.linalg.inv(P)
+
+        XT_dot_P_inv =  np.dot(XT, P_inv)
+
+        val = np.dot(XT_dot_P_inv, X)
+
+        if val < 1:
             return True
         else:
-            print("not docked")
             return False
-          
-    def check_target_collision(self, x):
-        x = np.asarray(x)[0]
-        position, velocities = x[:3], x[3:]
-        posmag, velmag = np.linalg.norm(position), np.linalg.norm(velocities) 
-        print("positions ", position, " mag: ", posmag)
-        print("velocities ", velocities, " mag: ", velmag)
 
-        if (posmag == 0) and (velmag >=0):
-            return True
-        else:
-            return False 
-
-    def compute_cost(self, x, u):
-        print("u param", u)
-        print("x param", x)
-        Q = np.asarray([[5.0, 0.0, 0.0, 0.0, 0.0, 0.0],
-                        [0.0, 5.0, 0.0, 0.0, 0.0, 0.0],
-                        [0.0, 0.0, 5.0, 0.0, 0.0, 0.0],
-                        [0.0, 0.0, 0.0, 10.0, 0.0, 0.0],
-                        [0.0, 0.0, 0.0, 0.0, 10.0, 0.0],
-                        [0.0, 0.0, 0.0, 0.0, 0.0, 0.0]])
-        R = np.asarray(10.0)
-        x = np.asarray(x, dtype=np.double)[0]
-        u = np.asarray(u, dtype=np.double)
-        print("x", x)
-        xTQ = np.dot(x, Q)
-        xTQx = np.dot(xTQ, x.T)
-        print("u ", u)
-        print("R", R)
-        uTR = np.dot(u, R)
-        uTRu = np.dot(uTR, u.T)
-        print(xTQ)
-        print("shape of u ", u.shape)
-        print("shape of x ", x.shape)
-        print("shape of R ", R.shape)
-        cost = xTQx + uTRu
-        print(cost)
-        return cost 
 
     def reset(self):
         self.done=False
@@ -164,6 +183,12 @@ class HCW_ARPOD(gym.Env):
         self.time_elapsed = 0
         self.x = matlab.double(self.x0)[0]
         self.observation = np.asarray(self.x, dtype=np.float64)[0]
+
+        self.prev_distance = self.distance_toTarget(self.observation)
+
+        self.info = defaultdict(list)
+        self.obstacle_dict = {'obstacle_1' : self.inital_obstacle}
+
         return self.observation  # reward, done, info can't be included
 
     def render(self, mode='human'):

@@ -9,15 +9,15 @@ from visualize import plot_path
 
 
 X, Y, Z = [], [], []
-
-env = HCW_ARPOD([200.0, 100.0, 250.0, 0.0, 0.0, 0.0])
+x0 = [-800.0, -500.0, -800.0, 0.0, 0.0, 0.0] 
+env = HCW_ARPOD(x0)
 obs = env.reset()
 
 X.append(obs[0])
 Y.append(obs[1])
 Z.append(obs[2])
 
-model_dir ="model_out/ARPOD_AGENT3.zip"
+model_dir ="model_out/ARPOD_OBSTACLE3.zip"
 model = PPO.load(model_dir, env=env)
 
 done = False
@@ -31,7 +31,7 @@ while done == False:
     Y.append(obs[1]) 
     Z.append(obs[2])
 
-plot_path(X, Y, Z)
+plot_path(X, Y, Z, info)
 
 print("FINAL OBS")
 print(obs)
