@@ -33,6 +33,7 @@ class HCW_ARPOD(gym.Env):
         self.obstacle_dict = {'obstacle_1' : self.inital_obstacle}
 
         self.info = defaultdict(list)
+        self.done = False
 
     def step(self, action):
         self.time_elapsed += 1
@@ -175,13 +176,33 @@ class HCW_ARPOD(gym.Env):
             return False
 
 
+
+    def random_x0(self):
+
+        pos_mu = 500
+        pos_sig = 50
+
+        vel_mu = -3
+        vel_sig = 1.7
+
+        pos = pos_sig * np.random.randn(3,) + pos_mu
+        vel = vel_sig * np.random.randn(3,) + vel_mu
+
+        x0 = np.concatenate((pos, vel), axis=None)
+        print(x0)
+
+        return x0
+    
+
     def reset(self):
         self.done=False
 
         print(self.x)
         print(type(self.x))
         self.time_elapsed = 0
-        self.x = matlab.double(self.x0)[0]
+
+        x0 = self.random_x0()
+        self.x = matlab.double(x0)[0]
         self.observation = np.asarray(self.x, dtype=np.float64)[0]
 
         self.prev_distance = self.distance_toTarget(self.observation)
