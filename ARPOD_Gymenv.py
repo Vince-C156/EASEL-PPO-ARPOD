@@ -5,7 +5,8 @@ import numpy as np
 import matplotlib.pyplot as plt
 from mpl_toolkits.mplot3d import Axes3D
 from collections import defaultdict
-
+import math
+import random
 
 	
 class HCW_ARPOD(gym.Env):
@@ -24,13 +25,19 @@ class HCW_ARPOD(gym.Env):
 
         self.action_space = spaces.Box(low=-6.0, high=6.0, shape=(3,), dtype=np.float64)
 	# Example for using image as input (channel-first; channel-last also works):
-        self.observation_space = spaces.Box(low=-10000.0, high=10000.0, shape=(6,), dtype=np.float64)
+        self.observation_space = spaces.Box(low=-6250.0, high=6250.0, shape=(6,), dtype=np.float64)
 
         self.prev_distance = self.distance_toTarget(self.observation)
         self.inital_distance = self.distance_toTarget(self.observation)
 
         self.inital_obstacle = ([500.0, 500.0, -500.0, -2, -3, -1], [200, 500, 300])
-        self.obstacle_dict = {'obstacle_1' : self.inital_obstacle}
+        self.obstacle_dict = defaultdict(tuple)
+        self.obstacle_dict['obstacle_1'] = self.inital_obstacle
+
+        for i, obstacle in enumerate(self.random_obstacles(), start=2):
+            print("ID VALUE")
+            print(f'obstacle_[{i}]')
+            self.obstacle_dict[f'obstacle_[{i}]'] = obstacle
 
         self.info = defaultdict(list)
         self.done = False
@@ -79,7 +86,7 @@ class HCW_ARPOD(gym.Env):
             self.done = True
             return self.observation, reward, self.done, self.info
 
-        if self.time_elapsed >= 1000:
+        if self.time_elapsed >= 14400:
             reward = -300
             self.done = True
             return self.observation, reward, self.done, self.info
@@ -114,7 +121,7 @@ class HCW_ARPOD(gym.Env):
 
 
     def is_inbounds(self, obs):
-        s = 3250.0
+        s = 6250.0
         a = (s**2.0 + s**2.0) ** 0.5
         b = s*2
 
@@ -133,6 +140,12 @@ class HCW_ARPOD(gym.Env):
             return True    
 
 
+    def in_target(self):
+        pass
+
+    def target_collision(self):
+        pass
+    
     def in_obstacle(self, chaserPos, obstacle_data : tuple):
 
         """
@@ -192,6 +205,40 @@ class HCW_ARPOD(gym.Env):
         print(x0)
 
         return x0
+
+    def random_obstacles(self):
+
+        new_obstacles = list()
+
+        n = random.randint(0, 3)
+
+        sqrthigh_pos = 28.0
+        low_pos = -500.0
+
+        sqrthigh_vel = 1.7
+        low_vel = -3
+
+        sqrtdim_high = 28
+        dim_low = 150
+
+        for i in range(0, n):
+            pos = sqrthigh_pos * np.random.randn(3,) + low_pos
+            vel = sqrthigh_vel * np.random.randn(3,) + low_vel
+
+            a, b, c = sqrtdim_high * np.random.randn(3,) + dim_low
+
+
+            a, b, c = int(a), int(b), int(c)
+
+            state = np.concatenate((pos, vel), axis=None)
+            axes = [a, b, c]
+
+            new_obstacles.append((state, axes))
+
+        return new_obstacles
+            
+
+        
     
 
     def reset(self):
@@ -208,7 +255,13 @@ class HCW_ARPOD(gym.Env):
         self.prev_distance = self.distance_toTarget(self.observation)
 
         self.info = defaultdict(list)
-        self.obstacle_dict = {'obstacle_1' : self.inital_obstacle}
+        self.obstacle_dict = defaultdict(tuple)
+        self.obstacle_dict['obstacle_1'] = self.inital_obstacle
+
+        for i, obstacle in enumerate(self.random_obstacles(), start=2):
+            print("ID VALUE")
+            print(f'obstacle_[{i}]')
+            self.obstacle_dict[f'obstacle_[{i}]'] = obstacle
 
         return self.observation  # reward, done, info can't be included
 
