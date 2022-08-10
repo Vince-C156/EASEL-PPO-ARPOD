@@ -112,10 +112,11 @@ class HCW_ARPOD(gym.Env):
 
         return dist
 
+
     def is_inbounds(self, obs):
-        s = 2500.0
+        s = 3250.0
         a = (s**2.0 + s**2.0) ** 0.5
-        b = s
+        b = s*2
 
         c = (a**2.0 + b**2.0) ** 0.5
 
@@ -174,7 +175,6 @@ class HCW_ARPOD(gym.Env):
             return True
         else:
             return False
-
 
 
     def random_x0(self):
