@@ -192,8 +192,8 @@ class HCW_ARPOD(gym.Env):
 
     def random_x0(self):
 
-        pos_mu = 500
-        pos_sig = 50
+        pos_mu = -6000
+        pos_sig = 78
 
         vel_mu = -3
         vel_sig = 1.7
