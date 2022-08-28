@@ -20,9 +20,12 @@ Windows install instructions
 
 -install matlab engine
 
-cd \Program Files\MATLAB\R2022a\extern\engines\python
+cd '\Program Files\MATLAB\R2022a\extern\engines\python'
 
 python setup.py install
+
+*install on user profile only
+python setup.py install --user 
 
 -install matlab packages
 
