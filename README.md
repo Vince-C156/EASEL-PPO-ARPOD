@@ -29,6 +29,8 @@ python setup.py install --user
 
 -install matlab packages
 
+control systems toolbox
+Statistics and machine learning toolbox
 
 ---
 
