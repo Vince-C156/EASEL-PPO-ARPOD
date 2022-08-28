@@ -15,14 +15,19 @@ Matlab to Python version compatibility
 
 https://www.mathworks.com/content/dam/mathworks/mathworks-dot-com/support/sysreq/files/python-compatibility.pdf
 
-
+---------------------------------
 Windows install instructions
 
-*install matlab engine
+-install matlab engine
 
 cd \Program Files\MATLAB\R2022a\extern\engines\python
 
 python setup.py install
+
+-install matlab packages
+
+
+---
 
 *install requirements
 
