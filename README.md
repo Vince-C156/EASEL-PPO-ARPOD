@@ -37,3 +37,7 @@ Statistics and machine learning toolbox
 *install requirements
 
 pip install -r requirements.txt
+
+if windows pip install -r requirements.txt does not work follow this tutorial
+
+https://www.howtogeek.com/266621/how-to-make-windows-10-accept-file-paths-over-260-characters/
