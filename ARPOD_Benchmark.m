@@ -6,8 +6,8 @@ classdef ARPOD_Benchmark
         %rho_r = 50;
         rho_d = 0.1; % docking phase initial radius (0.1 km)
         %rho_d = 25;
-        m_t = 420000; % mass of target (2000 kg)
-        m_c = 4200; % mass of chaser (500 kg)
+        m_t = 2000; % mass of target (2000 kg)
+        m_c = 500; % mass of chaser (500 kg)
         mu = 398600.4; %earth's gravitational constant (in km^3/s^2)
         a = 42164; % semi-major axis of GEO (42164 km)
         %a = 1000;

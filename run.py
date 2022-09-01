@@ -19,7 +19,7 @@ X.append(obs[0])
 Y.append(obs[1])
 Z.append(obs[2])
 """
-model_dir ="model_out/ARPOD_RANDOM.zip"
+model_dir ="ARPODv5.zip"
 model = PPO.load(model_dir, env=env)
 
 done = False
@@ -32,6 +32,9 @@ while done == False:
     X.append(obs[0]) 
     Y.append(obs[1]) 
     Z.append(obs[2])
+
+    stats = env.episode_data
+    print(stats)
 
 plot_path(X, Y, Z, info)
 
