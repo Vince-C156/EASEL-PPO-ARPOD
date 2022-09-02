@@ -19,7 +19,7 @@ X.append(obs[0])
 Y.append(obs[1])
 Z.append(obs[2])
 """
-model_dir ="ARPODv5.zip"
+model_dir ="model_export/ARPODv9.zip"
 model = PPO.load(model_dir, env=env)
 
 done = False

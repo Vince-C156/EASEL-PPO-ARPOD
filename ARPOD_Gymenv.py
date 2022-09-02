@@ -10,7 +10,8 @@ import random
 
 	
 class HCW_ARPOD(gym.Env):
-    """Custom Environment that follows gym interface"""
+    """Custom Environmen
+t that follows gym interface"""
 
     def __init__(self, x0):
         eng = matlab.engine.start_matlab()
@@ -25,16 +26,16 @@ class HCW_ARPOD(gym.Env):
         self.theta1 = 0.5
         self.theta2 = 0.5
 
-        #action space between interval of -5000 to 5000, calculated with mass of chaser, 500kg, times a max of 10N from benchmark. 500 * 10 = 5000kg m/s^2
-        self.action_space = spaces.Box(low=-5000.0, high=5000.0, shape=(3,), dtype=np.float64)
+        #action space between interval of -0.00002 to 0.00002, calculated with mass of chaser, 500kg, times a max of 10N from benchmark. 500 * 10 = 5000kg m/s^2
+        self.action_space = spaces.Box(low=-(1/50), high=(1/50), shape=(3,), dtype=np.float64)
 
 	# Example for using image as input (channel-first; channel-last also works):
-        self.observation_space = spaces.Box(low=-6250.0, high=6250.0, shape=(6,), dtype=np.float64)
+        self.observation_space = spaces.Box(low=-10.0, high=10.0, shape=(6,), dtype=np.float64)
 
         self.prev_distance = self.distance_toTarget(self.observation)
         self.inital_distance = self.distance_toTarget(self.observation)
 
-        self.inital_obstacle = ([500.0, 500.0, -500.0, -2, -3, -1], [200, 500, 300])
+        self.inital_obstacle = ([5.0, 5.0, -5.0, -0.002, 0.01, 0.0003], [0.2, 0.5, 0.3])
         self.obstacle_dict = defaultdict(tuple)
         self.obstacle_dict['obstacle_1'] = self.inital_obstacle
 
@@ -57,6 +58,7 @@ class HCW_ARPOD(gym.Env):
         """
 
         self.episode_data = {"x0" : self.x0,
+                             "last u": self.u,
                              "current step" : 0,
                              "steps in LOS" : 0,
                              "step reward" : 0,
@@ -71,7 +73,7 @@ class HCW_ARPOD(gym.Env):
         self.time_elapsed += 1
 
         self.episode_data["current step"] = self.episode_data.get("current step") + 1
-
+        self.episode_data["last u"] = action
         #evolve system by t+1
         self.x = self.eng.ARPOD_Benchmark.nextStep(self.x, matlab.double(action), matlab.double(1), matlab.single(1),
                                                    nargout=1)[0]
@@ -155,7 +157,7 @@ class HCW_ARPOD(gym.Env):
         """
         distance = self.distance_toTarget(self.observation)
 
-        if distance <= 50:
+        if distance <= 0.01:
             reward += 500
             self.episode_data["ending condition"] = "docked"
             self.episode_data["step reward"] = reward
@@ -165,10 +167,16 @@ class HCW_ARPOD(gym.Env):
             self.episode_data["ending state"].append(self.observation)
             return self.observation, reward, self.done, self.info
         else:
-            reward += self.prev_distance - distance
+            #reward += self.prev_distance - distance
+            initial_distance = self.distance_toTarget(self.episode_data["x0"])
+            progress = initial_distance - distance
+            print(f'PROGRESS {progress}')
         
-        if reward <= 0:
-            reward += -1
+        if progress <= 0:
+            reward += -2
+        else:
+            r = progress * 1.5
+            reward += r
 
         self.prev_distance = distance
 
@@ -178,12 +186,12 @@ class HCW_ARPOD(gym.Env):
         """
 
         if self.in_LOS(chaserPos):
-            reward += 5
+            reward += 15
             self.episode_data.get("steps in LOS") + 1
             print("IN LOS")
         else:
             print("OUTSIDE LOS")
-            reward += -2
+            reward += -0.5
 
         self.episode_data["step reward"] = reward
         self.episode_data["episode reward"] = self.episode_data.get("episode reward") + reward
@@ -207,7 +215,7 @@ class HCW_ARPOD(gym.Env):
         """
         Calculating a domain that equally extends slightly over 10km away from the chaser.
         """
-        s = 6250.0
+        s = 10
         a = (s**2.0 + s**2.0) ** 0.5
         b = s*2
 
@@ -218,9 +226,9 @@ class HCW_ARPOD(gym.Env):
         x, y, z = position[0], position[1], position[2]
 
 
-        m_fromTarget = ((x**2.0) + (y**2.0) + (z**2.0)) ** 0.5
+        km_fromTarget = ((x**2.0) + (y**2.0) + (z**2.0)) ** 0.5
 
-        if m_fromTarget >= c:
+        if km_fromTarget >= c:
             return False
         else:
             return True    
@@ -247,7 +255,7 @@ class HCW_ARPOD(gym.Env):
         """
 
         obstaclePos = obstacle_data[0]
-        obstacleAxes = np.asarray(obstacle_data[1], dtype=np.float64)
+        obstacleAxes = np.asarray(obstacle_data[1], dtype=np.dtype('d'))
 
         obstacleAxes_squared = np.dot(obstacleAxes, obstacleAxes.T)
 
@@ -259,7 +267,7 @@ class HCW_ARPOD(gym.Env):
         XT = X.T
 
 
-        P = np.zeros([3,3], dtype=np.float64)
+        P = np.zeros([3,3], dtype=np.dtype('d'))
         np.fill_diagonal(P, obstacleAxes_squared)
 
         P_inv = np.linalg.inv(P)
@@ -328,11 +336,11 @@ class HCW_ARPOD(gym.Env):
         that is far from the target
         """
 
-        pos_mu = -6000
-        pos_sig = 78
+        pos_mu = -10
+        pos_sig = 3.3
 
-        vel_mu = -3
-        vel_sig = 1.7
+        vel_mu = -0.00020
+        vel_sig = 0.014142136
 
         pos = pos_sig * np.random.randn(3,) + pos_mu
         vel = vel_sig * np.random.randn(3,) + vel_mu
@@ -352,14 +360,14 @@ class HCW_ARPOD(gym.Env):
 
         n = random.randint(0, 3)
 
-        sqrthigh_pos = 28.0
-        low_pos = -500.0
+        sqrthigh_pos = 2.5
+        low_pos = -1.5
 
-        sqrthigh_vel = 1.7
-        low_vel = -3
+        sqrthigh_vel = 0.5
+        low_vel = -0.02
 
-        sqrtdim_high = 28
-        dim_low = 150
+        sqrtdim_high = 0.5
+        dim_low = -0.25
 
         for i in range(0, n):
             pos = sqrthigh_pos * np.random.randn(3,) + low_pos
@@ -368,7 +376,7 @@ class HCW_ARPOD(gym.Env):
             a, b, c = sqrtdim_high * np.random.randn(3,) + dim_low
 
 
-            a, b, c = int(a), int(b), int(c)
+            #a, b, c = int(a), int(b), int(c)
 
             state = np.concatenate((pos, vel), axis=None)
             axes = [a, b, c]
@@ -408,6 +416,7 @@ class HCW_ARPOD(gym.Env):
             self.obstacle_dict[f'obstacle_[{i}]'] = obstacle
 
         self.episode_data = {"x0" : self.observation,
+                             "last u": self.u,
                              "current step" : 0,
                              "steps in LOS" : 0,
                              "step reward" : 0,
