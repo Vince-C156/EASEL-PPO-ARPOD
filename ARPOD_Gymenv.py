@@ -10,8 +10,7 @@ import random
 
 	
 class HCW_ARPOD(gym.Env):
-    """Custom Environmen
-t that follows gym interface"""
+    """Custom Environment that follows gym interface"""
 
     def __init__(self, x0):
         eng = matlab.engine.start_matlab()
@@ -27,6 +26,7 @@ t that follows gym interface"""
         self.theta2 = 0.5
 
         #action space between interval of -0.00002 to 0.00002, calculated with mass of chaser, 500kg, times a max of 10N from benchmark. 500 * 10 = 5000kg m/s^2
+        #10N = 500kg * a (m/s^2)
         self.action_space = spaces.Box(low=-(1/50), high=(1/50), shape=(3,), dtype=np.float64)
 
 	# Example for using image as input (channel-first; channel-last also works):
@@ -35,7 +35,7 @@ t that follows gym interface"""
         self.prev_distance = self.distance_toTarget(self.observation)
         self.inital_distance = self.distance_toTarget(self.observation)
 
-        self.inital_obstacle = ([5.0, 5.0, -5.0, -0.002, 0.01, 0.0003], [0.2, 0.5, 0.3])
+        self.inital_obstacle = ([5.0, 2.0, -5.0, -0.002, 0.01, 0.0003], [0.00002, 0.00001, 0.00002])
         self.obstacle_dict = defaultdict(tuple)
         self.obstacle_dict['obstacle_1'] = self.inital_obstacle
 
@@ -87,13 +87,17 @@ t that follows gym interface"""
         #evolve obstacles
         for obstacle_id, obstacle_data in self.obstacle_dict.items():
 
-            state = obstacle_data[0]
+            state = obstacle_data[0][:3]
+            input_u = obstacle_data[0][3:]
             axes = obstacle_data[1]
+            print("OBSTACLE STATE VEC", state, input_u )
+            print(matlab.double(state))
 
+            state_matlab = matlab.double(obstacle_data[0])[0]
+            #u_matlab = matlab.double(np.asarray([0,0,0]))[0]
 
-            state_matlab = matlab.double(state)[0]
             
-            evolved_state = self.eng.ARPOD_Benchmark.nextStep(state_matlab, matlab.double([0.0, 0.0, 0.0]), matlab.double(1), matlab.single(1), 
+            evolved_state = self.eng.ARPOD_Benchmark.nextStep(state_matlab, matlab.double(np.asarray([0.0,0.0,0.0]))[0], matlab.double(1), matlab.single(1), 
                                                               nargout=1)[0]
 
             evolved_state = np.asarray(evolved_state, dtype=np.float64)[0]
@@ -178,7 +182,7 @@ t that follows gym interface"""
             r = progress * 1.5
             reward += r
 
-        self.prev_distance = distance
+        #self.prev_distance = distance
 
 
         """
@@ -336,14 +340,16 @@ t that follows gym interface"""
         that is far from the target
         """
 
-        pos_mu = -10
-        pos_sig = 3.3
+        pos_mu = -9.5
+        pos_sig = 3.0
 
-        vel_mu = -0.00020
-        vel_sig = 0.014142136
+        vel_mu = -2.0
+        vel_sig = 1.41421356237
 
-        pos = pos_sig * np.random.randn(3,) + pos_mu
-        vel = vel_sig * np.random.randn(3,) + vel_mu
+        pos = pos_sig + pos_mu * np.random.randn(3,).astype(np.float64)
+        vel = vel_sig  + vel_mu * np.random.randn(3,).astype(np.float64)
+
+        vel /= np.float64(1000.0)
 
         x0 = np.concatenate((pos, vel), axis=None)
         print(x0)
@@ -361,24 +367,28 @@ t that follows gym interface"""
         n = random.randint(0, 3)
 
         sqrthigh_pos = 2.5
-        low_pos = -1.5
+        low_pos = -8.0
 
-        sqrthigh_vel = 0.5
-        low_vel = -0.02
+        sqrthigh_vel = 1.41421356237
+        low_vel = -2.0
 
-        sqrtdim_high = 0.5
-        dim_low = -0.25
+        sqrtdim_high = 2.5
+        dim_low = -3.0
 
         for i in range(0, n):
-            pos = sqrthigh_pos * np.random.randn(3,) + low_pos
-            vel = sqrthigh_vel * np.random.randn(3,) + low_vel
+            pos = sqrthigh_pos + low_pos * np.random.randn(3,)
+            vel = sqrthigh_vel + low_vel * np.random.randn(3,)
 
-            a, b, c = sqrtdim_high * np.random.randn(3,) + dim_low
+            a, b, c = sqrtdim_high + dim_low * np.random.randn(3,)
+
+            a /= np.float64(1000.0)
+            b /= np.float64(1000.0)
+            c /= np.float64(1000.0)
 
 
             #a, b, c = int(a), int(b), int(c)
 
-            state = np.concatenate((pos, vel), axis=None)
+            state = np.concatenate((pos, vel), axis=None, dtype=np.float64)
             axes = [a, b, c]
 
             new_obstacles.append((state, axes))

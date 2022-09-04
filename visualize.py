@@ -10,10 +10,10 @@ def plot_target(ax, center_x,center_y,radius,height_z):
     target_X = radius*np.cos(theta_grid) + center_x
     target_Y = radius*np.sin(theta_grid) + center_y
     
-    ax.plot_surface(target_X, target_Y, target_Z, color='red', linewidth=10,
+    ax.plot_surface(target_X, target_Y, target_Z, color='red', linewidth=0.5,
                        rstride=20, cstride=10, alpha=0.5)
 
-    ax.plot_surface(target_X, -target_Y, target_Z, color='red', linewidth=10,
+    ax.plot_surface(target_X, -target_Y, target_Z, color='red', linewidth=0.5,
                    rstride=20, cstride=10, alpha=0.5)
 
 def plot_obstacles(ax, info_items):
@@ -34,27 +34,8 @@ def plot_obstacles(ax, info_items):
         end_axes = axes[-1]
         
         a, b, c = end_axes[0], end_axes[1], end_axes[2]
-        """
-        xc_min, xc_max = end_xc - a, end_xc + a
-        yc_min, yc_max = end_yc - b, end_yc + b
-        zc_min, zc_max = end_zc - c, end_zc + c
         
-        ellipsoid_span = np.ogrid[xc_min:xc_max, yc_min:yc_max, zc_min:zc_max]
-        
-        XC = np.expand_dims(ellipsoid_span[0].flatten(), axis=0)[:, :500]
-        YC = np.expand_dims(ellipsoid_span[1].flatten(), axis=0)[:, :500]
-        ZC = np.expand_dims(ellipsoid_span[2].flatten(), axis=0)[:, :500]
-        
-        mXC, mYC = np.meshgrid(XC, YC)
-        
-        print(XC, YC.shape, ZC.shape)
-        
-        #ax.plot_wireframe(mXC, mYC, ZC, rstride=10, cstride=10, color='r')
-        """
-        
-        #ax = fig.add_subplot(111, projection='3d')
-        
-        P = np.asarray([[a, 0, 0], [0, b, 0], [0, 0, c]]).reshape((3,3))
+        P = np.asarray([[a, 0, 0], [0, b, 0], [0, 0, c]], dtype=np.float64).reshape((3,3))
         U, s, rotation = np.linalg.svd(P)
         rx, ry, rz = 1/np.sqrt(s)
         
@@ -83,10 +64,9 @@ def plot_obstacles(ax, info_items):
         #grid_xc, grid_yc = np.meshgrid(xc, yc) 
         #R = np.sqrt(grid_xc**2 + grid_yc**2) grid_zc = np.sin(R)
         
-        ax.plot_surface(*ellipsoid, rstride=4, cstride=4, color='g', alpha=0.5)
+        ax.plot_surface(*ellipsoid, rstride=1, cstride=1, color='g', alpha=1)
         
-        
-        ax.plot3D(Xc, Yc, Zc, 'red', linewidth=5)
+        ax.plot3D(Xc, Yc, Zc, 'red', linewidth=2)
         ax.scatter3D(Xc, Yc, Zc, c=Zc, cmap='Reds', s=5)
         
         
@@ -100,7 +80,7 @@ def plot_path(X, Y, Z, info):
     ax = fig.add_subplot(111, projection='3d')
 
     #ax, center_x,center_y,radius,height_z
-    plot_target(ax, 0, 0, 200, 200)
+    plot_target(ax, 0, 0, 1, 1)
 
     plot_obstacles(ax, info.items())
         
@@ -108,11 +88,11 @@ def plot_path(X, Y, Z, info):
     ax.plot3D(X, Y, Z, 'blue')
     #ax.scatter3D(X, Y, Z, c=Z, cmap='Greens', s=5)
     #ax.scatter(0, 0, 0, c='red', marker='D', s=200, label='target')
-    ax.scatter(X[0], Y[0], Z[0], c='yellow', marker='X', s=100, label='inital position')
-    ax.scatter(X[-1], Y[-1], Z[-1], c='orange', marker='D', s=200, label='end position')
-    ax.set_zlim([-2500, 2500]) 
-    ax.set_xlim([-2500, 2500]) 
-    ax.set_ylim([-2500, 2500])
+    ax.scatter(X[0], Y[0], Z[0], c='yellow', marker='X', s=50, label='inital position')
+    ax.scatter(X[-1], Y[-1], Z[-1], c='orange', marker='D', s=50, label='end position')
+    ax.set_zlim([-15, 15]) 
+    ax.set_xlim([-15, 15]) 
+    ax.set_ylim([-15, 15])
 
     plt.legend(loc="upper right")
     plt.show()

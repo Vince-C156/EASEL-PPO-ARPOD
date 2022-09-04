@@ -27,11 +27,13 @@ tensorboard = TensorBoard(log_dir=log_dir)
 x0 = [1000.0, 500.0, 550.0, 0.0, 0.0, 0.0] 
 env = HCW_ARPOD(x0) 
 env.reset()
- 
+
+
+#v6 n_steps=6500
 model = PPO("MlpPolicy", env, 
              learning_rate=0.03,
              n_epochs=15,
-             n_steps=3250,
+             n_steps=6500,
              batch_size=25, 
              clip_range_vf=None,
              clip_range=0.2,
@@ -40,7 +42,7 @@ model = PPO("MlpPolicy", env,
 
 info_list = list()
 #13000
-for i in range(35):
+for i in range(200):
     model.learn(total_timesteps=13000, reset_num_timesteps=False, tb_log_name=model_name)
     info_list.append(env.episode_data)
     model.save(model_dir)
