@@ -35,7 +35,7 @@ class HCW_ARPOD(gym.Env):
         self.prev_distance = self.distance_toTarget(self.observation)
         self.inital_distance = self.distance_toTarget(self.observation)
 
-        self.inital_obstacle = ([5.0, 2.0, -5.0, -0.000002, -0.0000001, 0.0003], [0.05, 0.07, 0.05])
+        self.inital_obstacle = ([5.0, 2.0, -5.0, -0.00002, -0.00001, 0.003], [0.05, 0.07, 0.05])
         self.obstacle_dict = defaultdict(tuple)
         self.obstacle_dict['obstacle_1'] = self.inital_obstacle
 
@@ -167,7 +167,7 @@ class HCW_ARPOD(gym.Env):
         distance = self.distance_toTarget(self.observation)
 
         if distance <= 0.01:
-            reward += 500000
+            reward += 500000.0
             self.episode_data["ending condition"] = "docked"
             self.episode_data["step reward"] = reward
             self.done = True
@@ -188,12 +188,15 @@ class HCW_ARPOD(gym.Env):
         """
 
         if self.in_LOS(chaserPos):
-            reward += 15
+            if distance < 10:
+                reward += 15.0
+            elif distance < 8:
+                reward += 50.0
             self.episode_data.get("steps in LOS") + 1
             print("IN LOS")
         else:
             print("OUTSIDE LOS")
-            reward += -0.0
+            reward += 0.0
 
         self.episode_data["step reward"] = reward
         self.episode_data["episode reward"] = self.episode_data.get("episode reward") + reward
@@ -369,7 +372,7 @@ class HCW_ARPOD(gym.Env):
         pos_sig = 3.0
 
         vel_mu = -2.0
-        vel_sig = 1.41421356237
+        vel_sig = 1.4142
 
         pos = pos_sig + pos_mu * np.random.randn(3,).astype(np.float64)
         vel = vel_sig  + vel_mu * np.random.randn(3,).astype(np.float64)
@@ -389,7 +392,7 @@ class HCW_ARPOD(gym.Env):
 
         new_obstacles = list()
 
-        n = random.randint(0, 5)
+        n = random.randint(0, 4)
 
         sqrthigh_pos = 2.5
         low_pos = -8.0

@@ -32,30 +32,30 @@ os.mkdir(f"model_export/{model_name}/logs")
 model_dir = f"model_export/{model_name}"
 log_dir = f"model_export/{model_name}/logs"
 tensorboard = TensorBoard(log_dir=log_dir)
-x0 = [10.0, 5.0, 5.0, 0.0, 0.0, 0.0]
+x0 = [8.0, -8.0, 8.0, 0.0, 0.0, 0.0]
 x1 = [-10.0, -5.0, 5.0, 0.0, 0.0, 0.0] 
 x2 = [10.0, -5.0, -5.0, 0.0, 0.0, 0.0] 
 x3 = [10.0, 5.0, -5.0, 0.0, 0.0, 0.0]
 
 X = [x0,x1,x2,x3]
 #lambda
-env = SubprocVecEnv([HCW_ARPOD(state).reset for state in X])
+#env = SubprocVecEnv([HCW_ARPOD(state) for state in X])
 
-#env = HCW_ARPOD(x0).reset
-#env.reset()
+env = HCW_ARPOD(x0)
+env.reset()
 
 
 #v6 n_steps=6500
 
 model = PPO("MlpPolicy", env, 
-             learning_rate=0.15,
-             n_epochs=15,
-             n_steps=6500,
+             learning_rate=0.03,
+             n_epochs=5,
+             n_steps=1000,
              batch_size=25, 
              clip_range_vf=None,
-             clip_range=0.15,
-             ent_coef=0.025,
-             vf_coef=0.03,verbose=1, tensorboard_log=log_dir)
+             clip_range=0.2,
+             ent_coef=0.035,
+             vf_coef=0.50,verbose=1, tensorboard_log=log_dir)
 
 info_list = list()
 #13000
