@@ -7,7 +7,7 @@ import os
 import time
 from visualize import plot_path
 
-n_episodes = 10
+n_episodes = 100
 
 x0 = np.asarray([-1000.0, -2000.0, -1000.0, 0.0, 0.0, 0.0], dtype=np.float64) 
 env = HCW_ARPOD(x0)
@@ -25,7 +25,7 @@ obs = env.reset()
                              "ending state" : list()}
 """
 
-model_dir = "model_export/ARPODv5.zip"
+model_dir = "model_export/ARPODv1.zip"
 model = PPO.load(model_dir, env=env)
 
 totalsteps_LOS = 0

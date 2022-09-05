@@ -10,13 +10,15 @@ from visualize import plot_target
 from os import cpu_count
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
 from pyramid_LOS import pyramid
+import glob
+from PIL import Image
 
 n_cores = cpu_count()
 print(f'Number of Logical CPU cores: {n_cores}')
 
 
 X, Y, Z = [], [], []
-x0 = np.asarray([10.0, 5.0, 10.0, 0.0, 0.0, 0.0], dtype=np.float64) 
+x0 = np.asarray([-9.0, 8.0, 10.0, 0.0, 0.0, 0.0], dtype=np.float64) 
 env = HCW_ARPOD(x0)
 obs = x0
 #obs = env.reset()
@@ -27,7 +29,7 @@ X.append(obs[0])
 Y.append(obs[1])
 Z.append(obs[2])
 """
-model_dir ="model_export/ARPODv10.zip"
+model_dir ="model_export/ARPODv1.zip"
 model = PPO.load(model_dir, env=env)
 
 done = False
@@ -54,13 +56,22 @@ region = pyramid(env.theta1, env.theta2, ax)
 
 region.plot_LOS()
 plot_target(ax, 0, 0, 1, 1)
+order = 0
 
 for step in range(0,N,5):
     if step == 0:
-        pass
+        plt.savefig(f'images/{order:008}')
     else:
         ax.set_xlabel(f'time {step} seconds')
         plot_path(fig, ax, X, Y, Z, info, env.theta1, env.theta2,step)
+        plt.savefig(f'images/{order:008}')
+    order+=1
 
+
+fp_out = "ARPODv2.gif"
+imgs = (Image.open(f) for f in sorted(glob.glob('images/*.png')))
+img = next(imgs)  # extract first image from iterator
+img.save(fp=fp_out, format='GIF', append_images=imgs,
+         save_all=True, duration=2, loop=0)
 print("FINAL OBS")
 print(obs)

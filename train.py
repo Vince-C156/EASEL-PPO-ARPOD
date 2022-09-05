@@ -48,7 +48,7 @@ env.reset()
 #v6 n_steps=6500
 
 model = PPO("MlpPolicy", env, 
-             learning_rate=0.03,
+             learning_rate=0.06,
              n_epochs=5,
              n_steps=1000,
              batch_size=25, 
@@ -59,7 +59,7 @@ model = PPO("MlpPolicy", env,
 
 info_list = list()
 #13000
-for i in range(5):
+for i in range(150):
     model.learn(total_timesteps=13000, reset_num_timesteps=False, tb_log_name=model_name)
     info_list.append(env.episode_data)
     model.save(model_dir)

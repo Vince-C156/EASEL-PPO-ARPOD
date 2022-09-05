@@ -18,12 +18,13 @@ class HCW_ARPOD(gym.Env):
         self.eng = eng
         self.x0 = x0
         self.x = matlab.double(x0)[0]
+        self.vdt_constraint = np.asarray([0.00002, 0.00002, 0.00002], dtype=np.float64)
 
         self.observation = np.asarray(self.x, dtype=np.float64)[0]
         self.time_elapsed = 0
         self.u = np.asarray([0.0, 0.0, 0.0], dtype=np.float64)
-        self.theta1 = 0.5
-        self.theta2 = 0.5
+        self.theta1 = 0.78
+        self.theta2 = 0.78
 
         #action space between interval of -0.00002 to 0.00002, calculated with mass of chaser, 500kg, times a max of 10N from benchmark. 500 * 10 = 5000kg m/s^2
         #10N = 500kg * a (m/s^2)
@@ -154,6 +155,15 @@ class HCW_ARPOD(gym.Env):
         #Passive rewards
 
         """
+
+        if self.above_velocitylimit(action):
+            reward -= 10.0
+        else:
+            reward += 0.0
+
+        """
+
+        """
         see if error is decreased between steps within a marign of error
         distance < prevdistance + 0.01
 
@@ -202,6 +212,16 @@ class HCW_ARPOD(gym.Env):
         self.episode_data["episode reward"] = self.episode_data.get("episode reward") + reward
 
         return self.observation, reward, self.done, self.info
+
+    def above_velocitylimit(self, action):
+        max_magnitude = np.linalg.norm(self.vdt_constraint)
+        current_magnitude = np.linalg.norm(np.asarray(action))
+
+        if current_magnitude >= max_magnitude:
+            return True
+        else:
+            return False
+        
 
     def distance_toTarget(self, obs):
         """
