@@ -3,6 +3,10 @@ import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 
 
+def plot_los():
+    pass
+
+
 def plot_target(ax, center_x,center_y,radius,height_z):
     z = np.linspace(0, height_z, 50)
     theta = np.linspace(0, 2*np.pi, 50)
