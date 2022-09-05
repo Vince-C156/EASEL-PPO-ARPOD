@@ -1,10 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
-
-
-def plot_los():
-    pass
+from pyramid_LOS import pyramid
 
 
 def plot_target(ax, center_x,center_y,radius,height_z):
@@ -78,7 +75,7 @@ def plot_obstacles(ax, info_items):
         for axis in 'xyz':
             getattr(ax, 'set_{}lim'.format(axis))((-max_radius, max_radius))
             
-def plot_path(X, Y, Z, info):
+def plot_path(X, Y, Z, info, theta1, theta2):
     
     fig = plt.figure(figsize=(40, 40))
     ax = fig.add_subplot(111, projection='3d')
@@ -87,6 +84,10 @@ def plot_path(X, Y, Z, info):
     plot_target(ax, 0, 0, 1, 1)
 
     plot_obstacles(ax, info.items())
+
+    region = pyramid(theta1, theta2, ax)
+
+    region.plot_LOS()
         
 
     ax.plot3D(X, Y, Z, 'blue')

@@ -18,11 +18,25 @@ class pyramid():
 
         self.b = np.asmatrix([ [0.0, 0.0, 0.0, 0.0] ]).T
 
-        x_span = np.linspace(-10,10,100)
-        y_span = np.linspace(-10,10,100)
-        z_span = np.linspace(-10,10,100)
+        x_span = np.linspace(-10,10,25)
+        y_span = np.linspace(-10,10,25)
+        z_span = np.linspace(-10,10,25)
 
-        constrained_span = [[x_span, y_span, z_span] for n in range(len(x_span)) if self.is_constrained([x_span[n], y_span[n], z_span[n]])]
+        print(x_span.shape)
+
+        """
+        for i in range(len(x_span)):
+            for j in range(len(x_span)):
+                for k in range(len(x_span)):
+                    if self.is_constrained([x_span[i], y_span[j], z_span[k]])
+        """
+        constrained_span = np.asarray([ [x_span[i], y_span[j], z_span[k]] for i in range(len(x_span)) for j in range(len(x_span)) for k in range(len(x_span)) if self.is_constrained([x_span[i], y_span[j], z_span[k]]) ])
+        print(constrained_span.shape)
+
+        #[print(i,j,k) for i in range(len(x_span)) for j in range(len(x_span)) for k in range(len(x_span))]
+        x_span = constrained_span[:, 0]
+        y_span = constrained_span[:, 1]
+        z_span = constrained_span[:, 2]
 
         self.X,self.Y = np.meshgrid(x_span,y_span)
         self.X,self.Z = np.meshgrid(x_span,z_span)
@@ -56,6 +70,7 @@ class pyramid():
         Point = [xpos ypos zpos]
         """
         x = np.asmatrix([ [Point[0], Point[1], Point[2]] ]).T
+        #print("x", x)
 
         Ax = self.A @ x
         values = np.less_equal(Ax, self.b)
@@ -74,8 +89,9 @@ class pyramid():
         self.plane3()
         self.plane4()
 
-        x, y, z = np.array([[-10,0,0],[0,-10,0],[0,0,-10]])
-        u, v, w = np.array([[10,0,0],[0,10,0],[0,0,10]])
+        x, y, z = np.array([[10,0,0],[0,10,0],[0,0,10]])
+        x, y, z = np.array([[0,0,0],[0,0,0],[0,0,0]])
+        u, v, w = np.array([[-10,0,0],[0,-10,0],[0,0,-10]])
         ax.quiver(x,y,z,u,v,w,arrow_length_ratio=0.1, color="black")
         
         """
@@ -92,18 +108,30 @@ class pyramid():
         p1_X = []
         p1_Y1 = []
 
+        """
         for i in range(self.X.shape[0]):
             for j in range(self.X.shape[0]):
                 if is_constrained([self.X[i,j],self.Y1[i,j],self.Z[i,j]]):
                     points.append(self.X[i,j], self.Y1[i,j], self.Z[i,j])
+        """
 
         #[(i,j) for i in range(self.X.shape[0]) for j in range(self.X.shape[0]) if is_constrained([self.X[i,j],self.Y1[i,j],self.Z[i,j]])]
         # treat xv[i,j], yv[i,j]
 
-        self.X self.Y1 self.Z
+        #self.X self.Y1 self.Z
+        print(self.X.shape)
+        """
+        constrained = np.asarray([ [self.X[i], self.Y1[j], self.Z[k]] for i in range(len(self.X)) for j in range(len(self.X)) for k in range(len(self.X)) if self.is_constrained([self.X[i], self.Y1[j], self.Z[k]]) ])
+        X, Y1, Z = constrained[:, 0], constrained[:, 1], constrained[:, 2]
+        """
 
         surf = ax.plot_surface(self.X, self.Y1, self.Z,color='yellow',alpha=0.5)
+
+        #constrained = np.asarray([ [self.X[i], self.Y2[j], self.Z[k]] for i in range(len(self.X)) for j in range(len(self.X)) for k in range(len(self.X)) if self.is_constrained([self.X[i], self.Y2[j], self.Z[k]]) ])
+        #X, Y2, Z = constrained[:, 0], constrained[:, 1], constrained[:, 2]
+
         surf = ax.plot_surface(self.X, self.Y2, self.Z,color='lightseagreen',alpha=0.5)
+
         surf = ax.plot_surface(self.X, self.Y, self.Z3,color='red',alpha=0.5)
         surf = ax.plot_surface(self.X, self.Y, self.Z4,color='blue',alpha=0.5)
 
