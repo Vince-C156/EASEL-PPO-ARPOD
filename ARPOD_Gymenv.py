@@ -35,7 +35,7 @@ class HCW_ARPOD(gym.Env):
         self.prev_distance = self.distance_toTarget(self.observation)
         self.inital_distance = self.distance_toTarget(self.observation)
 
-        self.inital_obstacle = ([5.0, 2.0, -5.0, -0.002, 0.01, 0.0003], [0.00002, 0.00001, 0.00002])
+        self.inital_obstacle = ([5.0, 2.0, -5.0, -0.000002, -0.0000001, 0.0003], [0.05, 0.07, 0.05])
         self.obstacle_dict = defaultdict(tuple)
         self.obstacle_dict['obstacle_1'] = self.inital_obstacle
 
@@ -154,15 +154,20 @@ class HCW_ARPOD(gym.Env):
         #Passive rewards
 
         """
-        Testing if chaser is within a distance of the target, win condition if true
+        see if error is decreased between steps within a marign of error
+        distance < prevdistance + 0.01
 
-        If false episode continues with passive distance reward, lastdistance - currentdistance = reward
-        if reward < 0, reward = -1
+        distance reward bracket
+        r < 10 = 10 reward
+        r < 7 = 50 reward
+        r < 4 = 100 reward
+        r < 1 = 1000 reward
+        
         """
         distance = self.distance_toTarget(self.observation)
 
         if distance <= 0.01:
-            reward += 500
+            reward += 500000
             self.episode_data["ending condition"] = "docked"
             self.episode_data["step reward"] = reward
             self.done = True
@@ -171,18 +176,11 @@ class HCW_ARPOD(gym.Env):
             self.episode_data["ending state"].append(self.observation)
             return self.observation, reward, self.done, self.info
         else:
-            #reward += self.prev_distance - distance
-            initial_distance = self.distance_toTarget(self.episode_data["x0"])
-            progress = initial_distance - distance
-            print(f'PROGRESS {progress}')
-        
-        if progress <= 0:
-            reward += -2
-        else:
-            r = progress * 1.5
-            reward += r
+            print("Distance reward:", self.distance_reward(distance))
+            reward += self.distance_reward(distance)
+       
 
-        #self.prev_distance = distance
+        self.prev_distance = distance
 
 
         """
@@ -195,7 +193,7 @@ class HCW_ARPOD(gym.Env):
             print("IN LOS")
         else:
             print("OUTSIDE LOS")
-            reward += -0.5
+            reward += -0.0
 
         self.episode_data["step reward"] = reward
         self.episode_data["episode reward"] = self.episode_data.get("episode reward") + reward
@@ -213,6 +211,33 @@ class HCW_ARPOD(gym.Env):
         dist = ((x**2.0) + (y**2.0) + (z**2.0)) ** 0.5
 
         return dist
+
+    def distance_reward(self, distance):
+        """
+        see if error is decreased between steps within a marign of error
+        distance < prevdistance + 0.01
+
+        distance reward bracket
+        r < 10 = 10 reward
+        r < 7 = 50 reward
+        r < 4 = 100 reward
+        r < 1 = 1000 reward
+        
+        """
+        if distance < self.prev_distance + 0.01:
+            if distance < 1:
+                return 1000.0
+            elif distance < 4:
+                return 100.0
+            elif distance < 7:
+                return 50.0
+            elif distance < 10:
+                return 10.0
+            else:
+                return 0.0
+        else:
+            print("BACKWARD MOVEMENT")
+            return 0.0
 
 
     def is_inbounds(self, obs):
@@ -364,16 +389,16 @@ class HCW_ARPOD(gym.Env):
 
         new_obstacles = list()
 
-        n = random.randint(0, 3)
+        n = random.randint(0, 5)
 
         sqrthigh_pos = 2.5
         low_pos = -8.0
 
-        sqrthigh_vel = 1.41421356237
-        low_vel = -2.0
+        sqrthigh_vel = 4.0
+        low_vel = -4.0
 
-        sqrtdim_high = 2.5
-        dim_low = -3.0
+        sqrtdim_high = 1500.0
+        dim_low = 0.0
 
         for i in range(0, n):
             pos = sqrthigh_pos + low_pos * np.random.randn(3,)
@@ -385,6 +410,7 @@ class HCW_ARPOD(gym.Env):
             b /= np.float64(1000.0)
             c /= np.float64(1000.0)
 
+            vel /= np.float64(1000.0)
 
             #a, b, c = int(a), int(b), int(c)
 

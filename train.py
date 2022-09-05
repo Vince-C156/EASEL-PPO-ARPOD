@@ -1,10 +1,18 @@
 import gym
 from stable_baselines3 import PPO
+from stable_baselines3.common.env_util import make_vec_env
 import os
 from os.path import exists
 import time
 from ARPOD_Gymenv import HCW_ARPOD
 from tensorflow.keras.callbacks import TensorBoard
+from os import cpu_count
+from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
+
+n_cores = cpu_count()
+print(f'Number of Logical CPU cores: {n_cores}')
+
+n_envs = 8
 
 #os.mkdir("model_export")
 
@@ -24,25 +32,34 @@ os.mkdir(f"model_export/{model_name}/logs")
 model_dir = f"model_export/{model_name}"
 log_dir = f"model_export/{model_name}/logs"
 tensorboard = TensorBoard(log_dir=log_dir)
-x0 = [1000.0, 500.0, 550.0, 0.0, 0.0, 0.0] 
-env = HCW_ARPOD(x0) 
-env.reset()
+x0 = [10.0, 5.0, 5.0, 0.0, 0.0, 0.0]
+x1 = [-10.0, -5.0, 5.0, 0.0, 0.0, 0.0] 
+x2 = [10.0, -5.0, -5.0, 0.0, 0.0, 0.0] 
+x3 = [10.0, 5.0, -5.0, 0.0, 0.0, 0.0]
+
+X = [x0,x1,x2,x3]
+#lambda
+env = SubprocVecEnv([HCW_ARPOD(state).reset for state in X])
+
+#env = HCW_ARPOD(x0).reset
+#env.reset()
 
 
 #v6 n_steps=6500
+
 model = PPO("MlpPolicy", env, 
-             learning_rate=0.03,
+             learning_rate=0.15,
              n_epochs=15,
              n_steps=6500,
              batch_size=25, 
              clip_range_vf=None,
-             clip_range=0.2,
+             clip_range=0.15,
              ent_coef=0.025,
              vf_coef=0.03,verbose=1, tensorboard_log=log_dir)
 
 info_list = list()
 #13000
-for i in range(200):
+for i in range(5):
     model.learn(total_timesteps=13000, reset_num_timesteps=False, tb_log_name=model_name)
     info_list.append(env.episode_data)
     model.save(model_dir)
