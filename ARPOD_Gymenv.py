@@ -66,12 +66,15 @@ class HCW_ARPOD(gym.Env):
                              "episode reward" : 0,
                              "ending condition" : "running",
                              "mission success" : False,
-                             "ending state" : list()}
+                             "ending state" : list(),
+                             "total fuel" : np.float64(0)}
 
     def step(self, action):
 
         reward = 0
         self.time_elapsed += 1
+
+        self.episode_data["total fuel"] += self.fuel_used(action)
 
         self.episode_data["current step"] = self.episode_data.get("current step") + 1
         self.episode_data["last u"] = action
@@ -130,7 +133,7 @@ class HCW_ARPOD(gym.Env):
 
         #check for out of bounds, Terminal condition if true
         if not self.is_inbounds(self.observation):
-            reward = -500
+            reward = -700
 
             self.episode_data["step reward"] = reward
             self.episode_data["ending condition"] = "out_bounds"
@@ -156,10 +159,10 @@ class HCW_ARPOD(gym.Env):
 
         """
 
-        if self.above_velocitylimit(action):
-            reward -= 10.0
+        if self.above_velocitylimit():
+            reward -= 1.0
         else:
-            reward += 0.0
+            reward += 5.0
 
         """
 
@@ -176,7 +179,7 @@ class HCW_ARPOD(gym.Env):
         """
         distance = self.distance_toTarget(self.observation)
 
-        if distance <= 0.01:
+        if distance <= 0.01 and self.above_velocitylimit():
             reward += 500000.0
             self.episode_data["ending condition"] = "docked"
             self.episode_data["step reward"] = reward
@@ -213,9 +216,17 @@ class HCW_ARPOD(gym.Env):
 
         return self.observation, reward, self.done, self.info
 
-    def above_velocitylimit(self, action):
+    def above_velocitylimit(self):
         max_magnitude = np.linalg.norm(self.vdt_constraint)
-        current_magnitude = np.linalg.norm(np.asarray(action))
+        max_docking = np.linalg.norm(np.asarray([0.0000001, 0.0000001, 0.0000001], dtype=np.float64) )
+
+        current_magnitude = np.linalg.norm(self.observation[3:])
+        #current_magnitude = np.linalg.norm(np.asarray(action))
+
+        #self.observation[3:]
+
+        if self.distance_toTarget(self.observation) < 0.2 and current_magnitude <= max_docking:
+           return True
 
         if current_magnitude >= max_magnitude:
             return True
@@ -267,7 +278,7 @@ class HCW_ARPOD(gym.Env):
         """
         Calculating a domain that equally extends slightly over 10km away from the chaser.
         """
-        s = 10
+        s = 15.0
         a = (s**2.0 + s**2.0) ** 0.5
         b = s*2
 
@@ -388,13 +399,17 @@ class HCW_ARPOD(gym.Env):
         that is far from the target
         """
 
-        pos_mu = -9.5
-        pos_sig = 3.0
+        pos_mu = -15.0
+        pos_sig = 3.873
 
         vel_mu = -2.0
         vel_sig = 1.4142
 
         pos = pos_sig + pos_mu * np.random.randn(3,).astype(np.float64)
+
+        while np.linalg.norm(pos) < 9.0:
+            pos = pos_sig + pos_mu * np.random.randn(3,).astype(np.float64)
+             
         vel = vel_sig  + vel_mu * np.random.randn(3,).astype(np.float64)
 
         vel /= np.float64(1000.0)
@@ -412,13 +427,13 @@ class HCW_ARPOD(gym.Env):
 
         new_obstacles = list()
 
-        n = random.randint(0, 4)
+        n = random.randint(0, 1)
 
         sqrthigh_pos = 2.5
         low_pos = -8.0
 
-        sqrthigh_vel = 4.0
-        low_vel = -4.0
+        sqrthigh_vel = 40.0
+        low_vel = -40.0
 
         sqrtdim_high = 1500.0
         dim_low = 0.0
@@ -443,7 +458,14 @@ class HCW_ARPOD(gym.Env):
             new_obstacles.append((state, axes))
 
         return new_obstacles
-            
+
+
+    def fuel_used(self, action):
+        action * np.float64(1000.0)
+        fuel = 0
+        for _ in action:
+            fuel += abs(_)
+        return fuel
 
         
     
@@ -482,7 +504,8 @@ class HCW_ARPOD(gym.Env):
                              "episode reward" : 0,
                              "ending condition" : "running",
                              "mission success" : False,
-                             "ending state" : list()}
+                             "ending state" : list(),
+                             "total fuel" : np.float64(0)}
 
         return self.observation  # reward, done, info can't be included
 

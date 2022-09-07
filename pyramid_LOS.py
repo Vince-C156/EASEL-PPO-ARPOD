@@ -6,9 +6,10 @@ from mpl_toolkits.mplot3d import Axes3D
 
 class pyramid():
 
-    def __init__(self, theta1, theta2, ax):
+    def __init__(self, theta1, theta2, ax, is_vertical):
         self.theta1 = theta1
         self.theta2 = theta2
+        self.is_vertical = is_vertical
         self.ax = ax
 
         self.A = np.asmatrix([[np.sin(self.theta1/2), np.cos(self.theta1/2), 0], 
@@ -38,13 +39,26 @@ class pyramid():
         y_span = constrained_span[:, 1]
         z_span = constrained_span[:, 2]
 
+        """
+        for side to side LOS
         self.X,self.Y = np.meshgrid(x_span,y_span)
         self.X,self.Z = np.meshgrid(x_span,z_span)
+        """
+
+        if is_vertical:
+            self.Z,self.Y = np.meshgrid(x_span,y_span)
+            self.Z,self.X = np.meshgrid(x_span,z_span)
+        else:
+            self.X,self.Y = np.meshgrid(x_span,y_span)
+            self.X,self.Z = np.meshgrid(x_span,z_span)
 
         self.Y1 = np.array([])
         self.Y2 = np.array([])
         self.Z3 = np.array([])
         self.Z4 = np.array([])
+        self.X3 = np.array([])
+        self.X4 = np.array([])
+
 
     def plane1(self):
         self.Y1 = np.sin(self.theta1/2) * self.X
@@ -65,6 +79,23 @@ class pyramid():
         self.Z4 = np.sin(self.theta2/2) * self.X
         self.Z4 *= np.cos(self.theta2/2)
 
+    #LOS for up and down
+    def plane1_vert(self):
+        self.Y1 = np.sin(self.theta1/2) * self.Z
+        self.Y1 *= -np.cos(self.theta1/2)
+
+    def plane2_vert(self):
+        self.Y2 = np.sin(self.theta1/2) * self.Z
+        self.Y2 *= np.cos(self.theta1/2)
+
+    def plane3_vert(self):
+        self.X3 = np.sin(self.theta2/2) * self.Z
+        self.X3 *= -np.cos(self.theta2/2)
+
+    def plane4_vert(self):
+        self.X4 = np.sin(self.theta2/2) * self.Z
+        self.X4 *= np.cos(self.theta2/2)
+
     def is_constrained(self, Point):
         """
         Point = [xpos ypos zpos]
@@ -84,10 +115,16 @@ class pyramid():
 
         ax = self.ax
 
-        self.plane1()
-        self.plane2()
-        self.plane3()
-        self.plane4()
+        if self.is_vertical:
+            self.plane1_vert()
+            self.plane2_vert()
+            self.plane3_vert()
+            self.plane4_vert()
+        else:
+            self.plane1()
+            self.plane2()
+            self.plane3()
+            self.plane4()
 
         x, y, z = np.array([[10,0,0],[0,10,0],[0,0,10]])
         x, y, z = np.array([[0,0,0],[0,0,0],[0,0,0]])
@@ -125,13 +162,15 @@ class pyramid():
         X, Y1, Z = constrained[:, 0], constrained[:, 1], constrained[:, 2]
         """
 
-        surf = ax.plot_surface(self.X, self.Y1, self.Z,color='yellow',alpha=0.5)
+        if self.is_vertical:
+            surf = ax.plot_surface(self.X, self.Y1, self.Z,color='lightseagreen',alpha=0.25)
+            surf = ax.plot_surface(self.X, self.Y2, self.Z,color='lightseagreen',alpha=0.25)
+            surf = ax.plot_surface(self.X4, self.Y, self.Z,color='lightseagreen',alpha=0.25)
+            surf = ax.plot_surface(self.X3, self.Y, self.Z,color='lightseagreen',alpha=0.25)
+        else:
+            surf = ax.plot_surface(self.X, self.Y1, self.Z,color='lightseagreen',alpha=0.25)
+            surf = ax.plot_surface(self.X, self.Y2, self.Z,color='lightseagreen',alpha=0.25)
 
-        #constrained = np.asarray([ [self.X[i], self.Y2[j], self.Z[k]] for i in range(len(self.X)) for j in range(len(self.X)) for k in range(len(self.X)) if self.is_constrained([self.X[i], self.Y2[j], self.Z[k]]) ])
-        #X, Y2, Z = constrained[:, 0], constrained[:, 1], constrained[:, 2]
-
-        surf = ax.plot_surface(self.X, self.Y2, self.Z,color='lightseagreen',alpha=0.5)
-
-        surf = ax.plot_surface(self.X, self.Y, self.Z3,color='red',alpha=0.5)
-        surf = ax.plot_surface(self.X, self.Y, self.Z4,color='blue',alpha=0.5)
+            surf = ax.plot_surface(self.X, self.Y, self.Z3,color='lightseagreen',alpha=0.25)
+            surf = ax.plot_surface(self.X, self.Y, self.Z4,color='lightseagreen',alpha=0.25)          
 

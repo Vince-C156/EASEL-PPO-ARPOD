@@ -20,16 +20,17 @@ print(f'Number of Logical CPU cores: {n_cores}')
 X, Y, Z = [], [], []
 x0 = np.asarray([-9.0, 8.0, 10.0, 0.0, 0.0, 0.0], dtype=np.float64) 
 env = HCW_ARPOD(x0)
-obs = x0
-#obs = env.reset()
+#obs = x0
+obs = env.reset()
 
-obs = x0
+#obs = x0
 """
 X.append(obs[0])
 Y.append(obs[1])
 Z.append(obs[2])
 """
-model_dir ="model_export/ARPODv1.zip"
+model_name = "ARPODv14"
+model_dir =f'model_export/{model_name}.zip'
 model = PPO.load(model_dir, env=env)
 
 done = False
@@ -52,10 +53,11 @@ fig = plt.figure(figsize=(5, 5))
 ax = fig.add_subplot(111, projection='3d')
 plt.legend(loc="upper right")
 
-region = pyramid(env.theta1, env.theta2, ax)
+region = pyramid(env.theta1, env.theta2, ax, False)
 
 region.plot_LOS()
-plot_target(ax, 0, 0, 1, 1)
+#ax, center_x,center_y,radius,height_z
+plot_target(ax, 0, 0, 2, 4)
 order = 0
 
 for step in range(0,N,5):
@@ -68,7 +70,7 @@ for step in range(0,N,5):
     order+=1
 
 
-fp_out = "ARPODv2.gif"
+fp_out = f"{model_name }.gif"
 imgs = (Image.open(f) for f in sorted(glob.glob('images/*.png')))
 img = next(imgs)  # extract first image from iterator
 img.save(fp=fp_out, format='GIF', append_images=imgs,

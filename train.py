@@ -8,7 +8,7 @@ from ARPOD_Gymenv import HCW_ARPOD
 from tensorflow.keras.callbacks import TensorBoard
 from os import cpu_count
 from stable_baselines3.common.vec_env import DummyVecEnv, SubprocVecEnv
-
+import tensorflow as tf
 n_cores = cpu_count()
 print(f'Number of Logical CPU cores: {n_cores}')
 
@@ -51,15 +51,16 @@ model = PPO("MlpPolicy", env,
              learning_rate=0.06,
              n_epochs=5,
              n_steps=1000,
-             batch_size=25, 
+             batch_size=50, 
              clip_range_vf=None,
              clip_range=0.2,
-             ent_coef=0.035,
-             vf_coef=0.50,verbose=1, tensorboard_log=log_dir)
+             ent_coef=0.045,
+             vf_coef=0.50,verbose=1, 
+             device='cuda', tensorboard_log=log_dir)
 
 info_list = list()
 #13000
-for i in range(150):
+for i in range(15):
     model.learn(total_timesteps=13000, reset_num_timesteps=False, tb_log_name=model_name)
     info_list.append(env.episode_data)
     model.save(model_dir)
