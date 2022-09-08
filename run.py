@@ -29,9 +29,12 @@ X.append(obs[0])
 Y.append(obs[1])
 Z.append(obs[2])
 """
-model_name = "ARPODv14"
+model_name = "ARPODv26"
 model_dir =f'model_export/{model_name}.zip'
 model = PPO.load(model_dir, env=env)
+
+if os.path.exists(f'{model_name}_images/') == False:
+    os.mkdir(f'{model_name}_images/')
 
 done = False
 
@@ -62,16 +65,16 @@ order = 0
 
 for step in range(0,N,5):
     if step == 0:
-        plt.savefig(f'images/{order:008}')
+        plt.savefig(f'{model_name}_images/{order:008}')
     else:
         ax.set_xlabel(f'time {step} seconds')
         plot_path(fig, ax, X, Y, Z, info, env.theta1, env.theta2,step)
-        plt.savefig(f'images/{order:008}')
+        plt.savefig(f'{model_name}_images/{order:008}')
     order+=1
 
 
-fp_out = f"{model_name }.gif"
-imgs = (Image.open(f) for f in sorted(glob.glob('images/*.png')))
+fp_out = f"{model_name}.gif"
+imgs = (Image.open(f) for f in sorted(glob.glob(f'{model_name}_images/*.png')))
 img = next(imgs)  # extract first image from iterator
 img.save(fp=fp_out, format='GIF', append_images=imgs,
          save_all=True, duration=2, loop=0)

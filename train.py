@@ -48,20 +48,27 @@ env.reset()
 #v6 n_steps=6500
 
 model = PPO("MlpPolicy", env, 
-             learning_rate=0.06,
-             n_epochs=5,
+             learning_rate=0.03,
+             n_epochs=4,
              n_steps=1000,
              batch_size=50, 
              clip_range_vf=None,
              clip_range=0.2,
-             ent_coef=0.045,
-             vf_coef=0.50,verbose=1, 
+             ent_coef=0.025,
+             vf_coef=0.35,verbose=1, 
              device='cuda', tensorboard_log=log_dir)
 
 info_list = list()
 #13000
+#30
+#150
+#ent_coef=0.025,
+#vf_coef=0.50
+#learning_rate=0.06,
+#n_steps=1000,
+#batch_size=50,
 for i in range(15):
-    model.learn(total_timesteps=13000, reset_num_timesteps=False, tb_log_name=model_name)
+    model.learn(total_timesteps=14000, reset_num_timesteps=False, tb_log_name=model_name)
     info_list.append(env.episode_data)
     model.save(model_dir)
 

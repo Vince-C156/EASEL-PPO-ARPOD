@@ -179,7 +179,7 @@ class HCW_ARPOD(gym.Env):
         """
         distance = self.distance_toTarget(self.observation)
 
-        if distance <= 0.01 and self.above_velocitylimit():
+        if distance <= 0.015 and self.above_velocitylimit() and self.in_LOS(chaserPos):
             reward += 500000.0
             self.episode_data["ending condition"] = "docked"
             self.episode_data["step reward"] = reward
@@ -202,10 +202,16 @@ class HCW_ARPOD(gym.Env):
 
         if self.in_LOS(chaserPos):
             if distance < 10:
-                reward += 15.0
-            elif distance < 8:
                 reward += 50.0
-            self.episode_data.get("steps in LOS") + 1
+            elif distance < 8:
+                reward += 100.0
+            elif distance < 4:
+                reward += 500.0
+            elif distance < 2:
+                reward += 1000.0
+            elif distance < 2:
+                reward += 1500.0
+            self.episode_data["steps in LOS"] = self.episode_data.get("steps in LOS") + 1
             print("IN LOS")
         else:
             print("OUTSIDE LOS")
@@ -218,14 +224,14 @@ class HCW_ARPOD(gym.Env):
 
     def above_velocitylimit(self):
         max_magnitude = np.linalg.norm(self.vdt_constraint)
-        max_docking = np.linalg.norm(np.asarray([0.0000001, 0.0000001, 0.0000001], dtype=np.float64) )
+        max_docking = np.linalg.norm(np.asarray([0.0001, 0.0001, 0.0001], dtype=np.float64) )
 
         current_magnitude = np.linalg.norm(self.observation[3:])
         #current_magnitude = np.linalg.norm(np.asarray(action))
 
         #self.observation[3:]
 
-        if self.distance_toTarget(self.observation) < 0.2 and current_magnitude <= max_docking:
+        if self.distance_toTarget(self.observation) < 0.1 and current_magnitude <= max_docking:
            return True
 
         if current_magnitude >= max_magnitude:
@@ -399,8 +405,8 @@ class HCW_ARPOD(gym.Env):
         that is far from the target
         """
 
-        pos_mu = -15.0
-        pos_sig = 3.873
+        pos_mu = -12.0
+        pos_sig = 3.0
 
         vel_mu = -2.0
         vel_sig = 1.4142
